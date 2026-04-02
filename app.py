@@ -8,8 +8,8 @@ app = Flask(__name__)
 DB_PATH = os.environ.get('DB_PATH', 'registrations.db')
 ADMIN_PW = os.environ.get('ADMIN_PW', '6574')
 
-LIMITS = {'adult': 16, 'mental': 2, 'women': 2}
-TOTAL_LIMIT = 20
+LIMITS = {'adult': 12, 'mental': 2, 'women': 2}
+TOTAL_LIMIT = 15
 DEPT_LABELS = {'adult': '성인', 'mental': '정신', 'women': '여성'}
 ROUND_LABELS = {'r1': '1차수', 'r2': '2차수'}
 
