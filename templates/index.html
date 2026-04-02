@@ -60,7 +60,7 @@
   .submit-btn { width: 100%; padding: 13px; background: #1a56db; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: #fff; cursor: pointer; margin-top: 4px; }
   .submit-btn:hover { background: #1648c0; }
   .submit-btn:disabled { background: #93c5fd; cursor: not-allowed; }
-  .error-msg { font-size: 13px; color: #e02424; margin-top: 8px; display: none; }
+  .error-msg { font-size: 13px; color: #e02424; margin-top: 8px; display: none; white-space: pre-line; }
 
   .success-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 1.5rem; text-align: center; display: none; }
   .success-box .check { font-size: 36px; margin-bottom: 10px; }
@@ -93,10 +93,13 @@
   .reset-confirm-btns button { flex: 1; padding: 9px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
   .reset-yes { background: #e02424; color: #fff; }
   .reset-no { background: #f3f4f6; color: #444; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table th { background: #f9fafb; padding: 8px 10px; text-align: left; color: #666; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
-  table td { padding: 9px 10px; border-bottom: 1px solid #f0f0ee; color: #1a1a1a; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+  table th { background: #f9fafb; padding: 8px 10px; text-align: left; color: #666; font-weight: 600; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+  table td { padding: 9px 10px; border-bottom: 1px solid #f0f0ee; color: #1a1a1a; vertical-align: middle; }
   .empty-td { text-align: center; color: #aaa; padding: 1.5rem !important; }
+  .del-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #e02424; border-radius: 6px; background: #fff; color: #e02424; cursor: pointer; white-space: nowrap; }
+  .del-btn:hover { background: #fff5f5; }
 </style>
 </head>
 <body>
@@ -109,7 +112,7 @@
       <li><span>📅</span> 1차수: 2025년 8월 O일</li>
       <li><span>📅</span> 2차수: 2025년 8월 △일</li>
       <li><span>📍</span> 울산대학교병원 본관지하 1층 다목적룸</li>
-      <li><span>👥</span> 차수별 15명 선착순 마감</li>
+      <li><span>👥</span> 차수별 15명 선착순 마감 · 1인 1회 신청</li>
     </ul>
   </div>
 
@@ -139,7 +142,7 @@
     </div>
     <div class="form-field">
       <label>소속 기관 <span style="color:#e02424;">*</span></label>
-      <input type="text" id="inputOrg" placeholder="ㅇㅇ대학교">
+      <input type="text" id="inputOrg" placeholder="○○학교">
     </div>
     <div class="form-field">
       <label>연락처 <span style="color:#e02424;">*</span></label>
@@ -179,20 +182,22 @@
         <button class="reset-btn" id="resetBtn">기록 초기화</button>
         <button class="dl-btn" id="dlBtn">엑셀 다운로드</button>
       </div>
-      <table>
-        <thead>
-          <tr><th>#</th><th>이름</th><th>소속</th><th>연락처</th><th>차수</th><th>부서</th><th>신청일시</th></tr>
-        </thead>
-        <tbody id="adminTableBody"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>이름</th><th>소속</th><th>연락처</th><th>차수</th><th>부서</th><th>신청일시</th><th>삭제</th></tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
 </div>
 <script>
-var LIMITS = { adult: 12, mental: 2, women: 2 };
+var LIMITS = { adult: 10, mental: 2, women: 2, child: 2 };
 var TOTAL_LIMIT = 15;
-var DEPT_LABELS = { adult: '성인', mental: '정신', women: '여성' };
+var DEPT_LABELS = { adult: '성인', mental: '정신', women: '여성', child: '아동' };
 var ROUND_LABELS = { r1: '1차수', r2: '2차수' };
 
 var selectedRound = null;
@@ -212,7 +217,7 @@ function renderStatus(counts) {
   var grid = document.getElementById('statusGrid');
   grid.innerHTML = '';
   var rounds = ['r1','r2'];
-  var depts = ['adult','mental','women'];
+  var depts = ['adult','mental','women','child'];
   for (var ri = 0; ri < rounds.length; ri++) {
     for (var di = 0; di < depts.length; di++) {
       var round = rounds[ri], dept = depts[di];
@@ -262,7 +267,7 @@ function renderDeptOptions(counts) {
     wrap.innerHTML = '<div class="dept-hint">차수를 먼저 선택해 주세요.</div>';
     return;
   }
-  var depts = ['adult','mental','women'];
+  var depts = ['adult','mental','women','child'];
   for (var i = 0; i < depts.length; i++) {
     (function(dept) {
       var c = counts[selectedRound][dept];
@@ -391,16 +396,6 @@ document.getElementById('confirmResetBtn').addEventListener('click', function() 
 });
 
 document.getElementById('dlBtn').addEventListener('click', function() {
-  var form = document.createElement('form');
-  form.method = 'POST';
-  form.action = '/api/admin/export';
-  var pwInput = document.createElement('input');
-  pwInput.type = 'hidden'; pwInput.name = 'pw'; pwInput.value = adminPw;
-  var filterInput = document.createElement('input');
-  filterInput.type = 'hidden'; filterInput.name = 'filter'; filterInput.value = adminFilter;
-  form.appendChild(pwInput); form.appendChild(filterInput);
-  document.body.appendChild(form);
-
   fetch('/api/admin/export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -413,8 +408,25 @@ document.getElementById('dlBtn').addEventListener('click', function() {
     a.href = url; a.download = '교수임상연수과정_신청자목록.csv'; a.click();
     URL.revokeObjectURL(url);
   });
-  document.body.removeChild(form);
 });
+
+function deleteRow(id) {
+  if (!confirm('이 신청 기록을 삭제하시겠습니까?')) return;
+  fetch('/api/admin/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pw: adminPw, id: id })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      refreshAll();
+      loadAdminData();
+    } else {
+      alert('삭제 실패: ' + data.msg);
+    }
+  });
+}
 
 function loadAdminData() {
   fetch('/api/admin/list', {
@@ -432,7 +444,7 @@ function renderAdminTable(rows) {
   filterWrap.innerHTML = '';
   var filters = [
     { key: 'all', label: '전체' }, { key: 'r1', label: '1차수' }, { key: 'r2', label: '2차수' },
-    { key: 'adult', label: '성인' }, { key: 'mental', label: '정신' }, { key: 'women', label: '여성' }
+    { key: 'adult', label: '성인' }, { key: 'mental', label: '정신' }, { key: 'women', label: '여성' }, { key: 'child', label: '아동' }
   ];
   for (var fi = 0; fi < filters.length; fi++) {
     (function(f) {
@@ -447,15 +459,17 @@ function renderAdminTable(rows) {
   tbody.innerHTML = '';
   if (rows.length === 0) {
     var tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="7" class="empty-td">신청자가 없습니다.</td>';
+    tr.innerHTML = '<td colspan="8" class="empty-td">신청자가 없습니다.</td>';
     tbody.appendChild(tr); return;
   }
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
     var row = document.createElement('tr');
+    row.setAttribute('data-id', r.id);
     row.innerHTML =
       '<td>' + (i+1) + '</td><td>' + r.name + '</td><td>' + r.org + '</td><td>' + r.phone +
-      '</td><td>' + r.round_label + '</td><td>' + r.dept_label + '</td><td>' + r.created_at + '</td>';
+      '</td><td>' + r.round_label + '</td><td>' + r.dept_label + '</td><td>' + r.created_at +
+      '</td><td><button class="del-btn" onclick="deleteRow(' + r.id + ')">삭제</button></td>';
     tbody.appendChild(row);
   }
 }
