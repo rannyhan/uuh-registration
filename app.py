@@ -10,8 +10,8 @@ app = Flask(__name__)
 ADMIN_PW = os.environ.get('ADMIN_PW', '6574')
 SHEET_ID = os.environ.get('SHEET_ID', '')
 
-LIMITS = {'adult': 10, 'mental': 2, 'women': 2, 'child': 2}
-TOTAL_LIMIT = 15
+LIMITS = {'adult': 14, 'mental': 2, 'women': 2, 'child': 2}
+TOTAL_LIMIT = 20
 DEPT_LABELS = {'adult': '성인', 'mental': '정신', 'women': '여성', 'child': '아동'}
 ROUND_LABELS = {'r1': '1차수', 'r2': '2차수'}
 
